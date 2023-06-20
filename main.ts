@@ -1,5 +1,11 @@
 import {App, Plugin, PluginSettingTab, Setting, TFile} from 'obsidian';
 
+declare module "obsidian" {
+	interface App {
+		getObsidianUrl(file: TFile): string;
+	}
+}
+
 interface PluginSettings {
 	host: string;
 }
@@ -12,7 +18,6 @@ export default class URILinkRedirectCopyPlugin extends Plugin {
 	settings: PluginSettings;
 
 	async copyUri(file: TFile) {
-		//@ts-ignore
 		const originalUri = this.app.getObsidianUrl(file);
 		const uri = originalUri.replace("obsidian://", this.settings.host);
 		await navigator.clipboard.writeText(uri);
@@ -22,8 +27,8 @@ export default class URILinkRedirectCopyPlugin extends Plugin {
 		await this.loadSettings();
 
 		this.addCommand({
-			id: 'copy-url',
-			name: 'Copy URL',
+			id: 'copy',
+			name: 'Copy',
 			checkCallback: (checking) => {
 				if (checking) {
 					return !!this.app.workspace.activeEditor?.file;
@@ -32,13 +37,12 @@ export default class URILinkRedirectCopyPlugin extends Plugin {
 				this.copyUri(file!);
 			}
 		});
-		this.addSettingTab(new PluginSettingsTab(this.app, this));
 
 		this.registerEvent(this.app.workspace.on('file-menu', (menu, file) => {
 			if (file instanceof TFile) {
 				menu.addItem(item => {
 					item
-						.setTitle("Copy Redirect URI")
+						.setTitle("Copy Redirect URL")
 						.setSection("info")
 						.setIcon("external-link")
 						.onClick(() => {
@@ -46,7 +50,9 @@ export default class URILinkRedirectCopyPlugin extends Plugin {
 						});
 				});
 			}
-		}))
+		}));
+
+		this.addSettingTab(new PluginSettingsTab(this.app, this));
 	}
 
 	async loadSettings() {
